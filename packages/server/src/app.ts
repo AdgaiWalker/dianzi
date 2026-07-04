@@ -11,6 +11,7 @@ import { insightsRoute } from "./modules/insights/routes";
 import { moderationRoute } from "./modules/moderation/routes";
 import { notificationRoute } from "./modules/notification/routes";
 import { platformRoute } from "./modules/platform/routes";
+import { ideasRoute } from "./modules/ideas/routes";
 import { siteMiddleware } from "./middleware/site";
 import { chinaAccessMediaMiddleware } from "./middleware/china-access";
 import { HttpBadRequest } from "./lib/http";
@@ -101,3 +102,5 @@ app.route("/", notificationRoute);
 app.route("/", analyticsRoute);
 app.route("/", billingRoute);
 app.route("/", complianceRoute);
+app.route("/", ideasRoute);
+

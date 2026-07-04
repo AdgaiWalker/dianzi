@@ -4,6 +4,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useDraggableCard } from '../hooks/useDraggableCard';
 import { Sparkles, Compass, AlertCircle, Plus, Eye, Share2, HelpCircle } from 'lucide-react';
+import { ideasApi } from '../services/api';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -156,10 +157,10 @@ export const HomePage: React.FC = () => {
 
   useEffect(() => {
     // 1. Fetch ideas from server
-    fetch('/api/ideas')
-      .then(res => res.ok ? res.json() : Promise.reject())
+    ideasApi
+      .listIdeas()
       .then(data => {
-        setIdeas(data.items || data || mockIdeas);
+        setIdeas(data.items || mockIdeas);
       })
       .catch(() => {
         setIdeas(mockIdeas); // Fallback to mock data

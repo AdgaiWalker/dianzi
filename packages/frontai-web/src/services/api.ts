@@ -436,6 +436,47 @@ export const contentApi = {
   },
 };
 
+export const ideasApi = {
+  async submitRawIdea(input: { rawInput: string; sourceType: string; visibility?: string; allowCollaboration?: boolean }) {
+    return unwrap(await request<ApiEnvelope<any>>('/api/ideas', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }));
+  },
+
+  async refineIdea(id: number) {
+    return unwrap(await request<ApiEnvelope<any>>(`/api/ideas/${id}/structure`, {
+      method: 'POST',
+    }));
+  },
+
+  async getIdea(id: number) {
+    return unwrap(await request<ApiEnvelope<any>>(`/api/ideas/${id}`));
+  },
+
+  async listIdeas(params?: { sort?: string; tag?: string }) {
+    const q = new URLSearchParams();
+    if (params?.sort) q.set('sort', params.sort);
+    if (params?.tag) q.set('tag', params.tag);
+    const qs = q.toString() ? `?${q.toString()}` : '';
+    return unwrap(await request<ApiEnvelope<{ items: any[] }>>(`/api/ideas${qs}`));
+  },
+
+  async reactToIdea(id: number, type: string) {
+    return unwrap(await request<ApiEnvelope<any>>(`/api/ideas/${id}/reactions`, {
+      method: 'POST',
+      body: JSON.stringify({ reaction_type: type }),
+    }));
+  },
+
+  async respondToIdea(id: number, input: { response_type: string; content: string; linked_idea_id?: number }) {
+    return unwrap(await request<ApiEnvelope<any>>(`/api/ideas/${id}/responses`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    }));
+  },
+};
+
 function sanitizeBlockedMedia(value: unknown): unknown {
   if (typeof value === 'string') {
     return isBlockedPlaceholderImage(value) ? '/media-placeholder.svg' : value;
