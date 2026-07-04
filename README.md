@@ -7,7 +7,7 @@
 
 > 一半生活，一半理想。校园站帮你站稳脚下，全球站帮你看见远方。
 
-双前端 + 管理后台 + 单后端：**校园站**（xyzidea.cn）+ **全球站**（xyzidea.com）+ **管理后台**，共享 `@ns/shared`，各自独立构建。
+双前端 + 管理后台 + 单后端：**校园站**（xyzidea.cn）+ **全球站**（xyzidea.com）+ **管理后台**，共享 `@dianzi/shared`，各自独立构建。
 
 ---
 
@@ -114,7 +114,7 @@ NS开发/
 └── NorthStar/                       # 所有代码
     ├── pnpm-workspace.yaml
     └── packages/
-        ├── shared/                  # @ns/shared — 纯 TS 共享包
+        ├── shared/                  # @dianzi/shared — 纯 TS 共享包
         ├── frontlife-web/           # 校园站 → localhost:3001
         ├── frontai-web/             # 全球站 → localhost:3000
         ├── admin-console/           # 管理后台 → localhost:3002

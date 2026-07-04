@@ -1,17 +1,47 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependency directories
 node_modules/
+jspm_packages/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+
+# Output directories
 dist/
+dist-ssr/
+*.local
+out/
+
+# IDEs and editors
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# System Files
+.DS_Store
+Thumbs.db
+
+# Vercel
+.vercel
+
+# Environment variables
 .env
 .env.local
-.env.*.local
-*.local.json
-.DS_Store
-*.log
-.vscode/
-.playwright-mcp/
-.omx/
-*.heapsnapshot
-.claude/plans/
-.agents/
-NorthStar/.tmp/
-
-.vercel
+.env.development.local
+.env.test.local
+.env.production.local
