@@ -1,13 +1,13 @@
-# 盘根（PanGen）
+# 点子（DIANZI）
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.8-blue.svg)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-19-61dafb.svg)](https://react.dev/)
 [![Vite](https://img.shields.io/badge/Vite-6-646cff.svg)](https://vitejs.dev/)
+[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-v4-06b6d4.svg)](https://tailwindcss.com/)
 
-> 一半生活，一半理想。校园站帮你站稳脚下，全球站帮你看见远方。
-
-双前端 + 管理后台 + 单后端：**校园站**（xyzidea.cn）+ **全球站**（xyzidea.com）+ **管理后台**，共享 `@dianzi/shared`，各自独立构建。
+> 让生活里的想法，遇见需要它的人。
+> 点子，是一个围绕“想法捕捉、AI整理、同频回应、价值共创”的个人价值网络平台。
 
 ---
 
@@ -15,141 +15,113 @@
 
 | 层级 | 技术 | 说明 |
 |------|------|------|
-| 前端 | React 19 + Tailwind CSS 3 | 双站使用 Zustand 5，管理后台使用 React state + `useApiResource` |
-| 后端 | Hono + Drizzle ORM + PostgreSQL | 多模块 API 已接入，覆盖校园站、全球站与管理后台 |
-| AI | 智谱 GLM-4-Flash | 后端代理，前端不持有 key |
-| 开发 | Claude Code（AI 辅助） | |
-| 测试 | Vitest | |
-| 包管理 | pnpm workspace | monorepo |
-
----
-
-## 快速开始
-
-```bash
-cd NorthStar && pnpm install
-
-# 校园站
-cd NorthStar/packages/frontlife-web && pnpm dev    # http://localhost:3001
-
-# 全球站
-cd NorthStar/packages/frontai-web && pnpm dev      # http://localhost:3000
-
-# 管理后台
-cd NorthStar/packages/admin-console && pnpm dev     # http://localhost:3002
-
-# 后端
-cd NorthStar/packages/server && pnpm start          # http://localhost:4000
-```
-
-### 类型检查
-
-```bash
-cd NorthStar/packages/frontlife-web && npx tsc --noEmit
-cd NorthStar/packages/frontai-web && npx tsc --noEmit
-cd NorthStar/packages/admin-console && pnpm typecheck
-cd NorthStar/packages/server && npx tsc --noEmit
-```
-
-### 测试
-
-```bash
-cd NorthStar/packages/server && npx vitest run
-cd NorthStar/packages/frontai-web && npx vitest run
-cd NorthStar/packages/frontlife-web && npx vitest run
-cd NorthStar/packages/admin-console && npx vitest run
-```
-
-### 本地联调与数据库命令
-
-三个前端当前都通过 `/api/*` 由 Vite proxy 转发到 `http://localhost:4000`。本地联调需要先启动后端。
-
-```bash
-cd NorthStar/packages/server
-pnpm db:push
-pnpm db:seed
-pnpm search:refresh
-pnpm clean:analytics
-pnpm start   # http://localhost:4000
-
-cd ../frontlife-web
-pnpm dev   # http://localhost:3001
-```
-
-如需连接非默认后端，可设置 `VITE_API_BASE_URL`。
-
-### API 规则
-
-- 校园站、全球站、管理后台通过 `/api/*` 由 Vite proxy 转发到 `http://localhost:4000`
-- AI 入口统一走 `/api/ai-gateway/chat`
-- `frontai-web` 和 `frontlife-web` 可通过 `VITE_API_BASE_URL` 覆盖默认后端地址
-
-### AI 本地配置
-
-后端 `packages/server/.env` 使用环境变量配置 AI 网关：
-
-```dotenv
-AI_API_KEY=your-key
-AI_BASE_URL=https://open.bigmodel.cn/api/paas/v4
-AI_MODEL=glm-4-flash
-```
+| 前端 (全球站) | React 19 + Tailwind CSS v4 | 采用 `@tailwindcss/vite` 插件，无 `tailwind.config.js` |
+| 前端 (校园站) | React 19 + Tailwind CSS v3 | 逐步升级中，使用 Zustand 5 进行状态管理 |
+| 后端 | Hono + Drizzle ORM + PostgreSQL | 多模块 API，已接入点子核心数据模型 |
+| AI 引擎 | 智谱 GLM-4-Flash | 后端代理，前端不持有 API key |
+| 动效引擎 | GSAP + ScrollTrigger | 星空大厅物理解析与 Slogan 滚动缩放重组 |
+| 包管理 | pnpm workspace | 扁平化 monorepo 工作空间 |
 
 ---
 
 ## 项目结构
 
-```
-NS开发/
-├── CLAUDE.md                        # AI 开发指南（权威）
-├── AGENTS.md                        # Codex 开发指南
-├── specs/                           # 规格文档
-│   ├── MISSION.md                   # 使命
-│   ├── PRD-盘根校园-v9.md            # 校园站 PRD（v9）
-│   ├── PRD-盘根AI指南针-标准版.md     # 全球站 PRD
-│   ├── 架构设计.md                   # 目标架构主文档
-│   ├── 全球specs.md                  # 全球站实现规格
-│   ├── architecture-gaps.md          # 当前架构核对
-│   └── 计划方案.md                    # 收尾计划
-│
-└── NorthStar/                       # 所有代码
-    ├── pnpm-workspace.yaml
-    └── packages/
-        ├── shared/                  # @dianzi/shared — 纯 TS 共享包
-        ├── frontlife-web/           # 校园站 → localhost:3001
-        ├── frontai-web/             # 全球站 → localhost:3000
-        ├── admin-console/           # 管理后台 → localhost:3002
-        └── server/                  # 服务端（health service: frontlife-api）→ localhost:4000
+```text
+dianzi/
+├── packages/
+│   ├── web-global/      # @dianzi/web-global       前端全球端 (点子官网与交互大厅)
+│   ├── web-campus/      # @dianzi/web-campus       前端校园端 (点子共创与实践板)
+│   ├── admin-console/   # @dianzi/admin-console    后台管理端
+│   ├── server/          # @dianzi/server           Hono 服务端 API
+│   └── shared/          # @dianzi/shared           共享模块与 Drizzle 数据库 schema
+├── specs/               # 产品 PRD 与设计文档
+├── docs/                # 系统开发与测试文档
+├── rules/               # 静态扫描规则定义
+└── pnpm-workspace.yaml  # Monorepo 配置文件
 ```
 
 ---
 
-## 文档索引
+## 快速开始
 
-| 文档 | 说明 |
-|------|------|
-| [宪法](.specify/memory/constitution.md) | 最高约束（五条公理） |
-| [使命](specs/MISSION.md) | 使命和方向 |
-| [校园站 PRD v9](specs/PRD-盘根校园-v9.md) | 校园站完整产品需求 |
-| [全球站 PRD](specs/PRD-盘根AI指南针-标准版.md) | 全球站产品需求 |
-| [目标架构](specs/架构设计.md) | 统一账号、账号级 LV 两站共享、产品 profile 与知识库分离 |
-| [全球站实现规格](specs/全球specs.md) | 数据模型、API 契约、认证流程 |
-| [当前架构核对](specs/architecture-gaps.md) | 已清零缺口、待验证项和风险边界 |
-| [收尾计划](specs/计划方案.md) | 剩余验证、Smoke、发布前收口 |
-| [文档一致性状态](NorthStar/docs/doc-consistency.md) | 文档清理后的通过状态与后续维护规则 |
+### 1. 安装依赖
 
-文档层级：**宪法 → 使命 → PRD → 实现规格**。冲突时以上层为准。
+在仓库根目录下运行：
+
+```bash
+$env:CI="true"; pnpm install
+```
+
+### 2. 启动开发服务器
+
+*   **启动服务端 (Port 4000)**：
+
+    ```bash
+    pnpm --filter @dianzi/server dev
+    ```
+
+*   **启动点子平台官网 (Port 3000)**：
+
+    ```bash
+    pnpm --filter @dianzi/web-global dev
+    ```
+
+*   **启动校园共创板 (Port 3001)**：
+
+    ```bash
+    pnpm --filter @dianzi/web-campus dev
+    ```
+
+*   **启动管理后台 (Port 3002)**：
+
+    ```bash
+    pnpm --filter @dianzi/admin-console dev
+    ```
 
 ---
 
-## 安全
+## 数据库与 AI 配置
 
-- 生产部署必须由后端网关持有并转发 API Key
-- `.env`、`.env.*.local`、`*.local.json` 已在 `.gitignore`，勿提交密钥
-- cn 用户数据不流向海外；com 站禁止收集中国敏感个人信息
-- 两站共享统一账号（`accounts` 表）和账号级等级，产品 profile 和行为数据按站点隔离
+### 1. 本地数据库初始化
+
+在 `packages/server/` 目录下，你需要创建 `.env` 文件配置 PostgreSQL：
+
+```dotenv
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/dianzi
+JWT_SECRET=your-jwt-secret
+AI_API_KEY=your-zhipu-api-key
+AI_BASE_URL=https://open.bigmodel.cn/api/paas/v4
+AI_MODEL=glm-4-flash
+```
+
+配置就绪后，执行以下命令同步库表与种子数据：
+
+```bash
+# 推送 Schema 到 PostgreSQL (Drizzle)
+pnpm --filter @dianzi/server db:push
+
+# 注入本地测试种子数据
+pnpm --filter @dianzi/server db:seed
+```
 
 ---
 
-## 许可证
+## 编译与测试
 
-[Apache License 2.0](LICENSE)
+*   **后端类型检查**：
+
+    ```bash
+    pnpm --filter @dianzi/server exec tsc --noEmit
+    ```
+
+*   **全球端打包构建**：
+
+    ```bash
+    pnpm --filter @dianzi/web-global build
+    ```
+
+*   **运行单元测试**：
+
+    ```bash
+    pnpm --filter @dianzi/server test
+    ```
