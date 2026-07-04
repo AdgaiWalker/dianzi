@@ -1,0 +1,7 @@
+id: use-getErrorMessage
+language: TypeScript
+severity: warning
+message: "使用 getErrorMessage(err, fallback) 替代 err instanceof Error 三元表达式"
+rule:
+  pattern: "$ERR instanceof Error ? $ERR.message : $FALLBACK"
+fix: "getErrorMessage($ERR, $FALLBACK)"

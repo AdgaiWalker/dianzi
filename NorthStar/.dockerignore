@@ -1,0 +1,7 @@
+node_modules
+dist
+*.log
+.env
+.zhipu.local.json
+.git
+.DS_Store

@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.env
+.env.local
+.env.*.local
+*.local.json
+.DS_Store
+*.log
+.vscode/
+.playwright-mcp/
+.omx/
+*.heapsnapshot
+.claude/plans/
+.agents/
+NorthStar/.tmp/
+
+.vercel

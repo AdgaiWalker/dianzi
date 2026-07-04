@@ -1,0 +1,123 @@
+import type { AuthTokenPayload } from "../../lib/auth";
+import { createArticleChangedNotificationInDb } from "../../data/postgres";
+import { approveSpaceClaimTask } from "../campus/repository";
+import { assertSiteReadable } from "../../db/site-aware";
+import { applyApplicationReview } from "../identity/service";
+import { writeAuditLog } from "../platform/service";
+import {
+  createModerationTask,
+  getModerationTask,
+  listModerationTasks,
+  updateModerationTaskStatus as updateTaskStatusInRepo,
+} from "./repository";
+import { isAtLeastReviewer, isAtLeastEditor } from '../platform/permissions';
+import type {
+  CreateModerationTaskRequest,
+  ModerationStatus,
+  ModerationTaskRecord,
+  SiteContext,
+  UpdateModerationTaskStatusRequest,
+} from "./types";
+
+export async function readModerationTasks(site: SiteContext, actor: AuthTokenPayload) {
+  assertSiteReadable(site, actor.site, actor.role);
+  assertReviewer(actor);
+  return listModerationTasks(site);
+}
+
+export async function readModerationTask(site: SiteContext, actor: AuthTokenPayload, id: number) {
+  assertSiteReadable(site, actor.site, actor.role);
+  assertReviewer(actor);
+  return getModerationTask(site, id);
+}
+
+export async function submitModerationTask(input: CreateModerationTaskRequest, actor: AuthTokenPayload) {
+  assertSiteReadable(input.site, actor.site, actor.role);
+  return createModerationTask(input, toNumberOrNull(actor.sub));
+}
+
+export async function updateModerationTaskStatus(
+  site: SiteContext,
+  actor: AuthTokenPayload,
+  id: number,
+  body: UpdateModerationTaskStatusRequest,
+) {
+  assertSiteReadable(site, actor.site, actor.role);
+  assertReviewer(actor);
+
+  const current = await getModerationTask(site, id);
+  if (!current) return null;
+
+  if (!canTransition(current.status, body.status)) {
+    return { error: "审核状态流转不符合规则" as const, task: current };
+  }
+
+  const result = await updateTaskStatusInRepo(site, id, body.status, toNumberOrNull(actor.sub));
+  if (!result) return null;
+
+  await writeAuditLog({
+    actorId: toNumberOrNull(actor.sub),
+    site,
+    targetType: "moderation_task",
+    targetId: String(id),
+    action: "moderation.status_changed",
+    before: { ...result.before },
+    after: { ...result.after },
+  });
+
+  if (result.after.type === "space_claim" && body.status === "resolved") {
+    const claimUpdate = await approveSpaceClaimTask(result.after);
+    if (claimUpdate) {
+      await writeAuditLog({
+        actorId: toNumberOrNull(actor.sub),
+        site,
+        targetType: "space",
+        targetId: claimUpdate.after.slug,
+        action: "campus.space_claim_approved",
+        before: { ...claimUpdate.before },
+        after: { ...claimUpdate.after },
+      });
+    }
+  }
+
+  if (result.after.type === "changed_feedback" && body.status === "resolved") {
+    await createArticleChangedNotificationInDb(result.after.targetId, result.after.reason ?? "内容可能需要重新确认");
+  }
+
+  if (result.after.type === "application_review" && (body.status === "resolved" || body.status === "dismissed")) {
+    await applyApplicationReview(result.after.targetId, body.status === "resolved", actor);
+  }
+
+  return { task: result.after };
+}
+
+function canTransition(from: ModerationStatus, to: ModerationStatus) {
+  const allowed: Record<ModerationStatus, ModerationStatus[]> = {
+    pending: ["in_review", "escalated"],
+    in_review: ["resolved", "dismissed"],
+    escalated: ["resolved"],
+    resolved: [],
+    dismissed: [],
+  };
+
+  return allowed[from].includes(to);
+}
+
+function toNumberOrNull(value: string) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) ? parsed : null;
+}
+
+function assertReviewer(actor: AuthTokenPayload) {
+  if (isAtLeastReviewer(actor.role!)) return;
+  throw new ModerationPermissionError("没有审核后台权限");
+}
+
+export class ModerationPermissionError extends Error {
+  status = 403 as const;
+
+  constructor(message: string) {
+    super(message);
+    this.name = "ModerationPermissionError";
+  }
+}

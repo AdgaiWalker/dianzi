@@ -1,0 +1,6 @@
+id: no-catch-empty-arrow
+language: TypeScript
+severity: hint
+message: "空 .catch(() => {}) 吞掉了错误，建议至少加 console.error"
+rule:
+  pattern: ".catch(() => {})"

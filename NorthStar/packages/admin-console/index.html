@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>盘根统一后台</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <style>
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', sans-serif;
+        background: #f8fafc;
+        color: #0f172a;
+      }
+      .static-shell {
+        min-height: 100vh;
+        box-sizing: border-box;
+        display: grid;
+        place-items: center;
+        padding: 32px 18px;
+      }
+      .static-shell__panel {
+        width: min(100%, 420px);
+        border: 1px solid #dbe3ee;
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 28px;
+        box-shadow: 0 18px 42px rgba(15, 23, 42, 0.08);
+      }
+      .static-shell__eyebrow {
+        margin: 0 0 10px;
+        color: #2563eb;
+        font-size: 13px;
+        font-weight: 700;
+      }
+      .static-shell h1 {
+        margin: 0;
+        font-size: 28px;
+        line-height: 1.2;
+        letter-spacing: 0;
+      }
+      .static-shell__lead {
+        margin: 14px 0 0;
+        color: #475569;
+        font-size: 15px;
+        line-height: 1.7;
+      }
+      .static-shell__fields {
+        display: grid;
+        gap: 10px;
+        margin: 22px 0 0;
+      }
+      .static-shell__field {
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 12px 14px;
+        color: #64748b;
+        font-size: 14px;
+      }
+      .static-shell__button {
+        margin-top: 14px;
+        border-radius: 8px;
+        padding: 12px 14px;
+        background: #0f172a;
+        color: #ffffff;
+        font-weight: 700;
+        text-align: center;
+      }
+      .static-shell__note {
+        margin: 16px 0 0;
+        color: #64748b;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <section class="static-shell" aria-label="盘根统一后台静态入口">
+        <main class="static-shell__panel">
+          <p class="static-shell__eyebrow">中国网络可见兜底内容</p>
+          <h1>盘根统一后台</h1>
+          <p class="static-shell__lead">后台用于审核、用户、内容和系统配置管理。应用脚本加载完成后会显示可操作的登录表单。</p>
+          <div class="static-shell__fields" aria-hidden="true">
+            <div class="static-shell__field">用户名或邮箱：admin</div>
+            <div class="static-shell__field">密码</div>
+          </div>
+          <div class="static-shell__button">登录后台</div>
+          <p class="static-shell__note">如果长时间停留在此页面，请刷新或检查网络后重试。</p>
+        </main>
+      </section>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,839 @@
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import App from '../src/App';
+import { useUIStore } from '../src/store/useUIStore';
+import { useUserStore } from '../src/store/useUserStore';
+
+const apiMock = vi.hoisted(() => {
+  const mock = {
+    getFeed: vi.fn(),
+    listSpaces: vi.fn(),
+    getSpace: vi.fn(),
+    search: vi.fn(),
+    getArticle: vi.fn(),
+    getSpacePosts: vi.fn(),
+    recordSearchLog: vi.fn(),
+    searchAiStream: vi.fn(),
+    markArticleHelpful: vi.fn(),
+    markArticleChanged: vi.fn(),
+    reportContent: vi.fn(),
+    getPermissions: vi.fn(),
+    createPost: vi.fn(),
+    replyToPost: vi.fn(),
+    markPostSolved: vi.fn(),
+    generateArticleDraft: vi.fn(),
+    createArticle: vi.fn(),
+    register: vi.fn(),
+    login: vi.fn(),
+    getIdentityMe: vi.fn(),
+    listLegalDocuments: vi.fn(),
+    exportUserData: vi.fn(),
+    requestAccountDeletion: vi.fn(),
+    getNotifications: vi.fn(),
+    markNotificationRead: vi.fn(),
+    getProfile: vi.fn(),
+    getCertificationStatus: vi.fn(),
+    applyCertification: vi.fn(),
+    favorite: vi.fn(),
+  };
+
+  // 子组件直接使用 namespace exports，namespace 内方法名与 api.* 一致，用 Proxy 转发。
+  const ns = new Proxy({} as Record<string, unknown>, {
+    get: (_target, prop: string) => (mock as Record<string, unknown>)[prop],
+  });
+
+  return { mock, ns };
+});
+
+vi.mock('@/services/api', () => ({
+  api: apiMock.mock,
+  initApi: () => {},
+  spacesApi: apiMock.ns,
+  articlesApi: apiMock.ns,
+  postsApi: apiMock.ns,
+  feedApi: apiMock.ns,
+  searchApi: apiMock.ns,
+  profileApi: apiMock.ns,
+  favoritesApi: apiMock.ns,
+  moderationApi: apiMock.ns,
+  complianceApi: apiMock.ns,
+  platformApi: apiMock.ns,
+  notificationApi: apiMock.ns,
+  identityApi: apiMock.ns,
+}));
+
+function renderRoute(path: string) {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <App />
+    </MemoryRouter>,
+  );
+}
+
+describe('frontlife pages', () => {
+  afterEach(() => {
+    cleanup();
+    useUserStore.getState().logout();
+    useUIStore.getState().resetNotifications();
+    useUIStore.getState().clearSessionExpired();
+  });
+
+  beforeEach(() => {
+    window.localStorage.removeItem('frontlife-user-storage');
+    apiMock.mock.getFeed.mockResolvedValue({
+      items: [
+        {
+          id: 'feed-1',
+          type: 'article',
+          createdAt: '2026-04-22T00:00:00.000Z',
+          articleId: 'campus-a1',
+          spaceId: 'food',
+          title: '二食堂麻辣烫实测',
+          summary: '人均 15 元',
+          actorName: '盘根编辑',
+          helpfulCount: 34,
+        },
+      ],
+      hasMore: false,
+    });
+    apiMock.mock.listSpaces.mockResolvedValue({
+      spaces: [
+        {
+          id: 'food',
+          slug: 'food',
+          title: '校园美食地图',
+          description: '吃遍每一食堂',
+          iconName: 'Utensils',
+          category: 'food',
+          articleCount: 1,
+          helpfulCount: 34,
+          favoriteCount: 10,
+          recentActiveAt: '2026-04-22T00:00:00.000Z',
+          maintainer: { id: 'u1', name: '盘根编辑' },
+        },
+      ],
+    });
+    apiMock.mock.getSpace.mockResolvedValue({
+      space: {
+        id: 'food',
+        slug: 'food',
+        title: '校园美食地图',
+        description: '吃遍每一食堂',
+        iconName: 'Utensils',
+        category: 'food',
+        articleCount: 1,
+        helpfulCount: 34,
+        favoriteCount: 10,
+        recentActiveAt: '2026-04-22T00:00:00.000Z',
+        maintainer: { id: 'u1', name: '盘根编辑' },
+      },
+      articles: [
+        {
+          id: 'campus-a1',
+          slug: 'campus-a1',
+          spaceId: 'food',
+          parentId: null,
+          title: '二食堂麻辣烫实测',
+          summary: '人均 15 元',
+          helpfulCount: 34,
+          changedCount: 0,
+          readCount: 100,
+          favoriteCount: 10,
+          confirmedAt: '2026-04-22T00:00:00.000Z',
+          updatedAt: '2026-04-22T00:00:00.000Z',
+        },
+      ],
+    });
+    apiMock.mock.search.mockResolvedValue({
+      articles: [
+        {
+          id: 'campus-a1',
+          slug: 'campus-a1',
+          spaceId: 'food',
+          parentId: null,
+          title: '二食堂麻辣烫实测',
+          summary: '人均 15 元',
+          helpfulCount: 34,
+          changedCount: 0,
+          readCount: 100,
+          favoriteCount: 10,
+          confirmedAt: '2026-04-22T00:00:00.000Z',
+          updatedAt: '2026-04-22T00:00:00.000Z',
+        },
+      ],
+      posts: [],
+      spaces: [],
+    });
+    apiMock.mock.getSpacePosts.mockResolvedValue({ posts: [] });
+    apiMock.mock.getArticle.mockResolvedValue({
+      article: {
+        id: 'campus-a1',
+        slug: 'campus-a1',
+        spaceId: 'food',
+        parentId: null,
+        title: '二食堂麻辣烫实测',
+        summary: '人均 15 元',
+        content: '# 二食堂麻辣烫实测\n\n## 价格\n\n人均 15 元。',
+        helpfulCount: 34,
+        changedCount: 0,
+        readCount: 100,
+        favoriteCount: 10,
+        confirmedAt: '2026-04-22T00:00:00.000Z',
+        updatedAt: '2026-04-22T00:00:00.000Z',
+        author: { id: 'u1', name: '盘根编辑' },
+        space: { id: 'food', title: '校园美食地图', iconName: 'Utensils' },
+        changeNotes: [],
+      },
+      previousArticleId: null,
+      nextArticleId: null,
+    });
+    apiMock.mock.recordSearchLog.mockResolvedValue({ log: { id: 'log-1' } });
+    apiMock.mock.searchAiStream.mockImplementation(async (_query: string, onDelta: (delta: string) => void) => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      onDelta('AI 补充回答');
+    });
+    apiMock.mock.getPermissions.mockResolvedValue({
+      canPost: true,
+      canWrite: false,
+      canCreateSpace: false,
+    });
+    apiMock.mock.createPost.mockResolvedValue({
+      post: {
+        id: 'post-new',
+        spaceId: 'food',
+        content: '新发帖',
+        tags: ['share'],
+        author: { id: 'u1', name: '张同学' },
+        helpfulCount: 0,
+        replyCount: 0,
+        createdAt: '刚刚',
+        replies: [],
+      },
+    });
+    apiMock.mock.replyToPost.mockResolvedValue({
+      reply: {
+        id: 'reply-new',
+        postId: 'post-help',
+        content: '可以去图书馆一楼问问。',
+        author: { id: 'u1', name: '张同学' },
+        starCount: 0,
+        createdAt: '刚刚',
+      },
+    });
+    apiMock.mock.markPostSolved.mockResolvedValue({
+      post: {
+        id: 'post-help',
+        spaceId: 'food',
+        content: '求助：打印店几点关门？',
+        tags: ['help'],
+        author: { id: 'u2', name: '李同学' },
+        helpfulCount: 0,
+        replyCount: 0,
+        createdAt: '刚刚',
+        replies: [],
+        solved: true,
+      },
+    });
+    apiMock.mock.generateArticleDraft.mockResolvedValue({
+      reply: '我先给你整理了一版文章草稿。发布前请确认真实时间、地点、价格和联系人。',
+      directions: ['核对窗口位置', '补充价格区间', '写清更新时间'],
+      draft: {
+        title: '三食堂烤冷面窗口测评',
+        content: '# 三食堂烤冷面窗口测评\n\n## 先说结论\n适合晚饭前快速解决一餐。',
+      },
+    });
+    apiMock.mock.createArticle.mockResolvedValue({
+      article: {
+        id: 'article-new',
+        slug: 'article-new',
+        spaceId: 'food',
+        parentId: null,
+        title: '三食堂烤冷面窗口测评',
+        summary: '适合晚饭前快速解决一餐。',
+        content: '# 三食堂烤冷面窗口测评\n\n## 先说结论\n适合晚饭前快速解决一餐。',
+        helpfulCount: 0,
+        changedCount: 0,
+        readCount: 0,
+        favoriteCount: 0,
+        confirmedAt: '2026-04-22T00:00:00.000Z',
+        updatedAt: '2026-04-22T00:00:00.000Z',
+        author: { id: 'u1', name: '张同学' },
+        space: { id: 'food', title: '校园美食地图', iconName: 'Utensils' },
+        changeNotes: [],
+      },
+    });
+    apiMock.mock.register.mockResolvedValue({
+      token: 'registered-token',
+      user: {
+        id: 'demo-user',
+        username: 'new-user',
+        email: 'new-user@example.com',
+        name: 'new-user',
+        role: 'user',
+        site: 'cn',
+        emailVerified: false,
+      },
+    });
+    apiMock.mock.login.mockResolvedValue({
+      token: 'test-token',
+      user: {
+        id: 'demo-user',
+        username: 'zhang',
+        email: 'zhang@example.com',
+        name: '张同学',
+        role: 'user',
+        site: 'cn',
+        emailVerified: false,
+      },
+    });
+    apiMock.mock.getIdentityMe.mockResolvedValue({
+      user: {
+        id: 'demo-user',
+        username: 'zhang',
+        email: 'zhang@example.com',
+        name: '张同学',
+        role: 'user',
+        site: 'cn',
+        emailVerified: false,
+      },
+    });
+    const legalDocuments = [
+      {
+        id: 'terms-cn',
+        site: 'cn',
+        type: 'terms',
+        version: '2026-04-24',
+        title: '盘根校园用户协议',
+        content: '使用盘根校园即表示你同意遵守校园内容共建规则。',
+        publishedAt: '2026-04-24T00:00:00.000Z',
+      },
+      {
+        id: 'privacy-cn',
+        site: 'cn',
+        type: 'privacy',
+        version: '2026-04-24',
+        title: '盘根校园隐私政策',
+        content: '盘根校园仅收集账号、内容互动和必要安全数据。',
+        publishedAt: '2026-04-24T00:00:00.000Z',
+      },
+    ];
+    apiMock.mock.listLegalDocuments.mockImplementation((type?: 'terms' | 'privacy') =>
+      Promise.resolve({
+        items: legalDocuments.filter((document) => !type || document.type === type),
+      }),
+    );
+    apiMock.mock.exportUserData.mockResolvedValue({
+      userId: 'demo-user',
+      site: 'cn',
+      exportedAt: '2026-04-24T12:00:00.000Z',
+      payload: {
+        user: {
+          username: 'zhang',
+          email: 'zhang@example.com',
+        },
+      },
+    });
+    apiMock.mock.requestAccountDeletion.mockResolvedValue({
+      id: 'deletion-1',
+      userId: 'demo-user',
+      site: 'cn',
+      status: 'pending',
+      reason: '毕业离校',
+      requestedAt: '2026-04-24T12:00:00.000Z',
+    });
+    apiMock.mock.getNotifications.mockResolvedValue({
+      notifications: [
+        {
+          id: 'notification-1',
+          type: 'reply',
+          title: '有人回复了你的帖子',
+          content: '图书馆工作日一般到晚上 10 点。',
+          isRead: false,
+          createdAt: '2026-04-22T00:00:00.000Z',
+        },
+      ],
+    });
+    apiMock.mock.getProfile.mockResolvedValue({
+      user: { id: 'demo-user', name: '张同学', school: '黑河学院' },
+      stats: { helpedCount: 1, articleCount: 0, favoriteCount: 0 },
+      spaces: [],
+      contents: [],
+      favorites: [],
+      canCreateSpace: false,
+    });
+    apiMock.mock.getCertificationStatus.mockResolvedValue({
+      certification: null,
+    });
+    apiMock.mock.applyCertification.mockResolvedValue({
+      certification: {
+        status: 'pending',
+        submittedAt: '2026-04-24T12:00:00.000Z',
+      },
+    });
+    apiMock.mock.favorite.mockResolvedValue({ favorite: { id: 'favorite-1' } });
+  });
+
+  it('renders home feed', async () => {
+    renderRoute('/');
+
+    expect(screen.getByText('问清楚，再出门。')).toBeInTheDocument();
+    expect(await screen.findByText('二食堂麻辣烫实测')).toBeInTheDocument();
+  });
+
+  it('shows a recoverable home error when the feed api fails', async () => {
+    apiMock.mock.getFeed.mockRejectedValueOnce(new Error('网络连接失败，请确认后端服务已启动或稍后重试。'));
+
+    renderRoute('/');
+
+    expect(await screen.findByText('生活流加载失败')).toBeInTheDocument();
+    expect(screen.getByText('网络连接失败，请确认后端服务已启动或稍后重试。')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '重试' })).toBeInTheDocument();
+  });
+
+  it('shows the session expired banner when the global ui state is set', async () => {
+    useUIStore.getState().setSessionExpired('登录状态已失效，请重新登录。');
+
+    renderRoute('/');
+
+    expect(await screen.findByText('登录状态已失效，请重新登录。')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '去登录' })).toBeInTheDocument();
+  });
+
+  it('renders search results', async () => {
+    renderRoute('/search?q=食堂');
+
+    expect(await screen.findByText(/找到/)).toBeInTheDocument();
+    expect(screen.getAllByText('二食堂麻辣烫实测').length).toBeGreaterThan(0);
+  });
+
+  it('renders partial search results before AI reference', async () => {
+    apiMock.mock.search.mockResolvedValueOnce({
+      articles: [],
+      posts: [
+        {
+          id: 'post-help',
+          spaceId: 'food',
+          content: '求助：打印店几点关门？',
+          tags: ['help'],
+          author: { id: 'u2', name: '李同学' },
+          helpfulCount: 0,
+          replyCount: 0,
+          createdAt: '刚刚',
+          replies: [],
+          solved: false,
+        },
+      ],
+      spaces: [],
+    });
+
+    renderRoute('/search?q=打印店');
+
+    expect(await screen.findByText('找到相关内容')).toBeInTheDocument();
+    expect(screen.getByText('求助：打印店几点关门？')).toBeInTheDocument();
+    expect(screen.getByText('由 AI 生成，仅供参考')).toBeInTheDocument();
+  });
+
+  it('shows AI fallback when search has no local result', async () => {
+    apiMock.mock.search.mockResolvedValueOnce({
+      articles: [],
+      posts: [],
+      spaces: [],
+    });
+
+    renderRoute('/search?q=打印店在哪');
+
+    expect(await screen.findByText('暂无本地结果')).toBeInTheDocument();
+    expect(await screen.findByText('由 AI 生成，仅供参考')).toBeInTheDocument();
+    expect(await screen.findByText(/AI 补充回答/)).toBeInTheDocument();
+    expect(apiMock.mock.searchAiStream).toHaveBeenCalledWith('打印店在哪', expect.any(Function));
+  });
+
+  it('turns an empty search into a prefilled help post', async () => {
+    useUserStore.getState().setToken('test-token');
+    useUserStore.getState().setUser('1', '张同学');
+    useUserStore.getState().setPermissions({
+      canPost: true,
+      canWrite: false,
+      canCreateSpace: false,
+    });
+    apiMock.mock.search.mockResolvedValueOnce({
+      articles: [],
+      posts: [],
+      spaces: [],
+    });
+
+    renderRoute('/search?q=打印店在哪');
+
+    fireEvent.click(await screen.findByRole('button', { name: '发起求助' }));
+
+    expect(await screen.findByDisplayValue('我想问：打印店在哪')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('#求助')).toBeInTheDocument();
+    apiMock.mock.createPost.mockClear();
+    fireEvent.click(screen.getByText('发布'));
+
+    await waitFor(() => {
+      expect(apiMock.mock.createPost).toHaveBeenCalledWith(
+        expect.objectContaining({
+          content: '我想问：打印店在哪',
+          tags: ['help'],
+        }),
+      );
+    });
+    expect(await screen.findByText('帖子已发布，已回到对应空间。')).toBeInTheDocument();
+  });
+
+  it('shows empty article and post states for an empty space', async () => {
+    apiMock.mock.getSpace.mockResolvedValueOnce({
+      space: {
+        id: 'food',
+        slug: 'food',
+        title: '校园美食地图',
+        description: '吃遍每一食堂',
+        iconName: 'Utensils',
+        category: 'food',
+        articleCount: 0,
+        helpfulCount: 0,
+        favoriteCount: 0,
+        recentActiveAt: '2026-04-22T00:00:00.000Z',
+        maintainer: { id: 'u1', name: '盘根编辑' },
+      },
+      articles: [],
+    });
+    apiMock.mock.getSpacePosts.mockResolvedValueOnce({ posts: [] });
+
+    renderRoute('/space/food');
+
+    expect((await screen.findAllByText('暂无文章')).length).toBeGreaterThan(0);
+    expect(screen.getByText('暂无帖子')).toBeInTheDocument();
+  });
+
+  it('renders article and feedback controls', async () => {
+    renderRoute('/article/campus-a1');
+
+    expect((await screen.findAllByRole('heading', { name: '二食堂麻辣烫实测' })).length).toBeGreaterThan(0);
+    expect(screen.getByText('有帮助')).toBeInTheDocument();
+    expect(screen.getByText('有变化')).toBeInTheDocument();
+  });
+
+  it('creates a post from the space page', async () => {
+    window.localStorage.setItem(
+      'frontlife-user-storage',
+      JSON.stringify({
+        state: {
+          token: 'test-token',
+          userId: '1',
+          userName: '张同学',
+          permissions: {
+            canPost: true,
+            canWrite: false,
+            canCreateSpace: false,
+          },
+        },
+      }),
+    );
+    useUserStore.getState().setToken('test-token');
+    useUserStore.getState().setUser('1', '张同学');
+    useUserStore.getState().setPermissions({
+      canPost: true,
+      canWrite: false,
+      canCreateSpace: false,
+    });
+    renderRoute('/space/food');
+
+    const input = await screen.findByPlaceholderText('在这里说点什么...');
+    fireEvent.change(input, { target: { value: '新发帖' } });
+    fireEvent.click(screen.getByText('发布'));
+
+    expect(apiMock.mock.createPost).toHaveBeenCalledWith(
+      expect.objectContaining({
+        spaceId: 'food',
+        content: '新发帖',
+      }),
+    );
+  });
+
+  it('creates a post from the home composer', async () => {
+    useUserStore.getState().setToken('test-token');
+    useUserStore.getState().setUser('1', '张同学');
+    useUserStore.getState().setPermissions({
+      canPost: true,
+      canWrite: false,
+      canCreateSpace: false,
+    });
+
+    renderRoute('/?write=1');
+
+    await screen.findByRole('option', { name: '校园美食地图' });
+    fireEvent.change(screen.getByPlaceholderText('分享、求助、二手、活动，都可以先写在这里。'), {
+      target: { value: '首页发帖' },
+    });
+    fireEvent.click(screen.getByText('发布'));
+
+    await waitFor(() => {
+      expect(apiMock.mock.createPost).toHaveBeenCalledWith(
+        expect.objectContaining({
+          spaceId: 'food',
+          content: '首页发帖',
+        }),
+      );
+    });
+  });
+
+  it('replies to a post and marks a help post solved', async () => {
+    useUserStore.getState().setToken('test-token');
+    useUserStore.getState().setUser('1', '张同学');
+    useUserStore.getState().setPermissions({
+      canPost: true,
+      canWrite: false,
+      canCreateSpace: false,
+    });
+    apiMock.mock.getSpacePosts.mockResolvedValueOnce({
+      posts: [
+        {
+          id: 'post-help',
+          spaceId: 'food',
+          content: '求助：打印店几点关门？',
+          tags: ['help'],
+          author: { id: 'u2', name: '李同学' },
+          helpfulCount: 0,
+          replyCount: 0,
+          createdAt: '刚刚',
+          replies: [],
+          solved: false,
+        },
+      ],
+    });
+
+    renderRoute('/space/food');
+
+    fireEvent.click(await screen.findByText('求助：打印店几点关门？'));
+    fireEvent.change(screen.getByPlaceholderText('写回复...'), {
+      target: { value: '可以去图书馆一楼问问。' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '回复' }));
+
+    await waitFor(() => {
+      expect(apiMock.mock.replyToPost).toHaveBeenCalledWith('post-help', '可以去图书馆一楼问问。');
+    });
+
+    fireEvent.click(screen.getAllByText('标记解决了')[0]);
+
+    await waitFor(() => {
+      expect(apiMock.mock.markPostSolved).toHaveBeenCalledWith('post-help');
+    });
+  });
+
+  it('generates an AI article draft and publishes it into the space knowledge area', async () => {
+    apiMock.mock.getPermissions.mockResolvedValueOnce({
+      canPost: true,
+      canWrite: true,
+      canCreateSpace: false,
+    });
+    useUserStore.getState().setToken('test-token');
+    useUserStore.getState().setUser('1', '张同学');
+    useUserStore.getState().setPermissions({ canPost: true, canWrite: true, canCreateSpace: false });
+
+    renderRoute('/space/food');
+
+    fireEvent.click(await screen.findByText('AI 写文章'));
+    fireEvent.change(screen.getByPlaceholderText('例如：三食堂烤冷面窗口测评'), {
+      target: { value: '三食堂烤冷面窗口测评' },
+    });
+    fireEvent.click(screen.getByText('生成草稿'));
+
+    expect(await screen.findByText('建议方向')).toBeInTheDocument();
+    expect((await screen.findAllByDisplayValue('三食堂烤冷面窗口测评')).length).toBeGreaterThan(0);
+
+    fireEvent.change(screen.getByDisplayValue(/适合晚饭前快速解决一餐/), {
+      target: {
+        value: '# 编辑后的窗口测评\n\n## 结论\n这是一段人工核对后的正文。',
+      },
+    });
+    fireEvent.click(screen.getByText('发布文章'));
+
+    await waitFor(() => {
+      expect(apiMock.mock.createArticle).toHaveBeenCalledWith(
+        expect.objectContaining({
+          spaceId: 'food',
+          title: '三食堂烤冷面窗口测评',
+          content: expect.stringContaining('人工核对后的正文'),
+        }),
+      );
+    });
+    expect(await screen.findByText('文章已发布，已回到当前空间知识区。')).toBeInTheDocument();
+    expect(screen.getAllByText('三食堂烤冷面窗口测评').length).toBeGreaterThan(0);
+  });
+
+  it('hides post composer when logged out', async () => {
+    renderRoute('/space/food');
+
+    expect(await screen.findByText('校园美食地图')).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('在这里说点什么...')).not.toBeInTheDocument();
+  });
+
+  it('shows header write entry after login', async () => {
+    useUserStore.getState().setToken('test-token');
+    useUserStore.getState().setUser('1', '张同学');
+    useUserStore.getState().setPermissions({
+      canPost: true,
+      canWrite: false,
+      canCreateSpace: false,
+    });
+
+    renderRoute('/');
+
+    expect((await screen.findAllByText('写点什么')).length).toBeGreaterThan(0);
+  });
+
+  it('marks notification as read from profile page', async () => {
+    useUserStore.getState().setToken('test-token');
+    useUserStore.getState().setUser('1', '张同学');
+    useUserStore.getState().setPermissions({
+      canPost: true,
+      canWrite: false,
+      canCreateSpace: false,
+    });
+    apiMock.mock.markNotificationRead.mockResolvedValue({
+      notification: {
+        id: 'notification-1',
+        type: 'reply',
+        title: '有人回复了你的帖子',
+        content: '图书馆工作日一般到晚上 10 点。',
+        isRead: true,
+        createdAt: '2026-04-22T00:00:00.000Z',
+      },
+    });
+
+    renderRoute('/me');
+
+    expect(await screen.findByText('有人回复了你的帖子')).toBeInTheDocument();
+    expect(screen.getByText('暂无个人内容')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('有人回复了你的帖子'));
+
+    expect(apiMock.mock.markNotificationRead).toHaveBeenCalledWith('notification-1');
+  });
+
+  it('limits profile notifications to the most recent 12 items', async () => {
+    useUserStore.getState().setToken('test-token');
+    useUserStore.getState().setUser('1', '张同学');
+    useUserStore.getState().setPermissions({
+      canPost: true,
+      canWrite: false,
+      canCreateSpace: false,
+    });
+    apiMock.mock.getNotifications.mockResolvedValue({
+      notifications: Array.from({ length: 13 }, (_, index) => ({
+        id: `notification-${index + 1}`,
+        type: 'reply' as const,
+        title: `通知 ${index + 1}`,
+        content: `通知内容 ${index + 1}`,
+        isRead: index !== 0,
+        createdAt: `2026-04-${String(index + 1).padStart(2, '0')}T00:00:00.000Z`,
+      })),
+    });
+
+    renderRoute('/me');
+
+    expect(await screen.findByText('共 13 条，显示最近 12 条')).toBeInTheDocument();
+    expect(screen.getByText('通知 1')).toBeInTheDocument();
+    expect(screen.getByText('通知 12')).toBeInTheDocument();
+    expect(screen.queryByText('通知 13')).not.toBeInTheDocument();
+  });
+
+  it('keeps notification read state in sync when marking read from the header', async () => {
+    useUserStore.getState().setToken('test-token');
+    useUserStore.getState().setUser('1', '张同学');
+    useUserStore.getState().setPermissions({
+      canPost: true,
+      canWrite: false,
+      canCreateSpace: false,
+    });
+    apiMock.mock.markNotificationRead.mockResolvedValue({
+      notification: {
+        id: 'notification-1',
+        type: 'reply',
+        title: '有人回复了你的帖子',
+        content: '图书馆工作日一般到晚上 10 点。',
+        isRead: true,
+        createdAt: '2026-04-22T00:00:00.000Z',
+      },
+    });
+
+    renderRoute('/');
+
+    fireEvent.click(await screen.findByRole('button', { name: '通知，1 条未读' }));
+    fireEvent.click(await screen.findByText('有人回复了你的帖子'));
+
+    expect(apiMock.mock.markNotificationRead).toHaveBeenCalledWith('notification-1');
+    await waitFor(() => {
+      expect(useUIStore.getState().notifications[0]?.isRead).toBe(true);
+    });
+  });
+
+  it('shows the session expired message on the login page', async () => {
+    renderRoute('/login?reason=session-expired');
+
+    expect(await screen.findByText('登录状态已失效，请重新登录。')).toBeInTheDocument();
+  });
+
+  it('registers through identity with legal consent version', async () => {
+    renderRoute('/login');
+
+    fireEvent.click(screen.getByText('没有账号？去注册'));
+    expect(await screen.findByText(/当前协议版本：2026-04-24/)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('用户名'), {
+      target: { value: 'new-user' },
+    });
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: '注册' }));
+
+    await waitFor(() => {
+      expect(apiMock.mock.register).toHaveBeenCalledWith({
+        username: 'new-user',
+        email: undefined,
+        password: 'password',
+        consentVersion: '2026-04-24',
+      });
+    });
+    expect(apiMock.mock.getIdentityMe).toHaveBeenCalled();
+    expect(useUserStore.getState().userRole).toBe('user');
+  });
+
+  it('renders legal documents from compliance api', async () => {
+    renderRoute('/legal/privacy');
+
+    expect(await screen.findByText('盘根校园隐私政策')).toBeInTheDocument();
+    expect(screen.getByText('盘根校园仅收集账号、内容互动和必要安全数据。')).toBeInTheDocument();
+  });
+
+  it('exports user data and submits an account deletion request from profile', async () => {
+    useUserStore.getState().setToken('test-token');
+    useUserStore.getState().setUser('1', '张同学');
+    useUserStore.getState().setPermissions({
+      canPost: true,
+      canWrite: false,
+      canCreateSpace: false,
+    });
+
+    renderRoute('/me');
+
+    expect(await screen.findByText('账号与数据')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '导出数据' }));
+    expect(await screen.findByText('导出内容')).toBeInTheDocument();
+    expect(screen.getByText(/"username": "zhang"/)).toBeInTheDocument();
+
+    fireEvent.change(screen.getByPlaceholderText('注销原因（可选）'), {
+      target: { value: '毕业离校' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '提交注销申请' }));
+
+    await waitFor(() => {
+      expect(apiMock.mock.requestAccountDeletion).toHaveBeenCalledWith({
+        reason: '毕业离校',
+      });
+    });
+    expect(await screen.findByText('注销申请已提交，当前状态：待处理')).toBeInTheDocument();
+  });
+});
