@@ -565,6 +565,47 @@ export const notificationApi = {
   },
 };
 
+export const ideasApi = {
+  submitRawIdea(input: { rawInput: string; sourceType: string; visibility?: string; allowCollaboration?: boolean }) {
+    return requestEnvelope<any>('/api/ideas', {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+
+  refineIdea(id: number) {
+    return requestEnvelope<any>(`/api/ideas/${id}/structure`, {
+      method: 'POST',
+    });
+  },
+
+  getIdea(id: number) {
+    return requestEnvelope<any>(`/api/ideas/${id}`);
+  },
+
+  listIdeas(params?: { sort?: string; tag?: string }) {
+    const q = new URLSearchParams();
+    if (params?.sort) q.set('sort', params.sort);
+    if (params?.tag) q.set('tag', params.tag);
+    const qs = q.toString() ? `?${q.toString()}` : '';
+    return requestEnvelope<{ items: any[] }>(`/api/ideas${qs}`);
+  },
+
+  reactToIdea(id: number, type: string) {
+    return requestEnvelope<any>(`/api/ideas/${id}/reactions`, {
+      method: 'POST',
+      body: JSON.stringify({ reaction_type: type }),
+    });
+  },
+
+  respondToIdea(id: number, input: { response_type: string; content: string; linked_idea_id?: number }) {
+    return requestEnvelope<any>(`/api/ideas/${id}/responses`, {
+      method: 'POST',
+      body: JSON.stringify(input),
+    });
+  },
+};
+
 // 聚合导出：现有调用方无需改动，新代码使用 namespace 导入
 export const api = {
   ...identityApi,
@@ -579,6 +620,7 @@ export const api = {
   ...complianceApi,
   ...platformApi,
   ...notificationApi,
+  ...ideasApi,
 };
 
 async function withOfflineFallback<T>(requester: () => Promise<T>, fallback: () => T): Promise<T> {

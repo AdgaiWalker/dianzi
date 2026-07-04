@@ -97,6 +97,8 @@ export async function saveStructuredResult(ideaId: number, input: SaveStructured
       })
       .where(eq(ideaStructures.ideaId, ideaId))
       .returning();
+
+    await linkByTagSimilarity(ideaId, input.tags);
     return row;
   } else {
     const [row] = await db
@@ -113,6 +115,8 @@ export async function saveStructuredResult(ideaId: number, input: SaveStructured
         tags: input.tags,
       })
       .returning();
+
+    await linkByTagSimilarity(ideaId, input.tags);
     return row;
   }
 }
@@ -213,5 +217,87 @@ export async function createResponse(
     })
     .where(eq(ideas.id, ideaId));
 
+  if (linkedIdeaId) {
+    await upsertEdge(
+      ideaId,
+      linkedIdeaId,
+      "discussion_link",
+      15,
+      `回应讨论提及关联: "${content.slice(0, 50)}..."`
+    );
+  }
+
   return row;
+}
+
+export async function upsertEdge(
+  sourceId: number,
+  targetId: number,
+  edgeType: string,
+  scoreInc: number,
+  reason: string
+) {
+  if (!db) return null;
+  if (sourceId === targetId) return null;
+
+  // Standardize order: smaller ID is always source to prevent duplicate reciprocal edges
+  const uSourceId = Math.min(sourceId, targetId);
+  const uTargetId = Math.max(sourceId, targetId);
+
+  const [existing] = await db
+    .select()
+    .from(ideaEdges)
+    .where(
+      and(
+        eq(ideaEdges.sourceIdeaId, uSourceId),
+        eq(ideaEdges.targetIdeaId, uTargetId),
+        eq(ideaEdges.edgeType, edgeType)
+      )
+    );
+
+  if (existing) {
+    const [row] = await db
+      .update(ideaEdges)
+      .set({
+        score: sql`${ideaEdges.score} + ${scoreInc}`,
+        reason,
+      })
+      .where(eq(ideaEdges.id, existing.id))
+      .returning();
+    return row;
+  } else {
+    const [row] = await db
+      .insert(ideaEdges)
+      .values({
+        sourceIdeaId: uSourceId,
+        targetIdeaId: uTargetId,
+        edgeType,
+        score: scoreInc,
+        reason,
+      })
+      .returning();
+    return row;
+  }
+}
+
+export async function linkByTagSimilarity(ideaId: number, tags: string[]) {
+  if (!db || !tags || tags.length === 0) return;
+
+  const otherStructures = await db
+    .select()
+    .from(ideaStructures)
+    .where(sql`${ideaStructures.ideaId} != ${ideaId}`);
+
+  for (const other of otherStructures) {
+    const sharedTags = tags.filter((t) => other.tags.includes(t));
+    if (sharedTags.length > 0) {
+      await upsertEdge(
+        ideaId,
+        other.ideaId,
+        "tag_similarity",
+        sharedTags.length * 10,
+        `共享标签: ${sharedTags.join(", ")}`
+      );
+    }
+  }
 }

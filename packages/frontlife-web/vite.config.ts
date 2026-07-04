@@ -1,6 +1,7 @@
 import path from 'path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   envDir: __dirname,
@@ -14,7 +15,7 @@ export default defineConfig({
       },
     },
   },
-  plugins: [react()],
+  plugins: [tailwindcss(), react()],
   resolve: {
     dedupe: ['react', 'react-dom'],
     alias: {

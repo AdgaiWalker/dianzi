@@ -136,4 +136,47 @@ describe("Ideas API Endpoints", () => {
     const responseBody = await responseRes.json();
     expect(responseBody.ok).toBe(true);
   });
+
+  it("should automatically build relationship edges when tags overlap or discussions link ideas", async () => {
+    const authHeader = userAuthorization();
+
+    // 1. Submit Idea A
+    const resA = await app.request("/api/ideas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        rawInput: "我想做一个给学校附近快餐店自动点单并智能排单的小软件",
+        sourceType: "work_efficiency",
+      }),
+    });
+    const idA = (await resA.json()).data.id;
+    await app.request(`/api/ideas/${idA}/structure`, { method: "POST" });
+
+    // 2. Submit Idea B (related via discussion link)
+    const resB = await app.request("/api/ideas", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        rawInput: "这是一个配送辅助小助手，配合点单系统使用",
+        sourceType: "life_observation",
+      }),
+    });
+    const idB = (await resB.json()).data.id;
+    await app.request(`/api/ideas/${idB}/structure`, { method: "POST" });
+
+    // 3. Link B to A via response discussion
+    const linkRes = await app.request(`/api/ideas/${idB}/responses`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": authHeader,
+      },
+      body: JSON.stringify({
+        response_type: "discussion",
+        content: "本工具可以作为自动点单后台的补充配送终端",
+        linked_idea_id: idA,
+      }),
+    });
+    expect(linkRes.status).toBe(201);
+  });
 });
