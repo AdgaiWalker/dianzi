@@ -1,10 +1,9 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, BookOpen, User, Flame } from 'lucide-react';
+import { Home, BookOpen, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const items = [
   { id: 'home', label: '首页', icon: Home, path: '/' },
-  { id: 'projects', label: '共创', icon: Flame, path: '/projects' },
   { id: 'explore', label: '探索', icon: BookOpen, path: '/explore' },
   { id: 'me', label: '我的', icon: User, path: '/me' },
 ];
@@ -16,13 +15,11 @@ export default function BottomNav() {
   const currentRoute =
     location.pathname === '/'
       ? 'home'
-      : location.pathname === '/projects'
-        ? 'projects'
-        : location.pathname.startsWith('/explore') || location.pathname.startsWith('/space')
-          ? 'explore'
-          : location.pathname === '/me'
-            ? 'me'
-            : 'home';
+      : location.pathname.startsWith('/explore') || location.pathname.startsWith('/space')
+        ? 'explore'
+        : location.pathname === '/me'
+          ? 'me'
+          : 'home';
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 flex h-bottom-nav-h items-center justify-around border-t border-border-light bg-white/98 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl md:hidden">

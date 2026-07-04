@@ -1,304 +1,323 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { useDraggableCard } from '../hooks/useDraggableCard';
-import { Sparkles, Compass, AlertCircle, Plus, Eye, Share2, HelpCircle } from 'lucide-react';
-import { ideasApi } from '../services/api';
-
-gsap.registerPlugin(ScrollTrigger);
-
-// Core value core definitions
-const VALUE_CORES = [
-  { id: 'lawful', label: '守法 Lawful', desc: '合规准入与边界约束', color: 'from-emerald-500/20 to-teal-500/20', border: 'border-emerald-500/30', glow: 'shadow-emerald-500/20' },
-  { id: 'independent', label: '独立 Independent', desc: '尊重观察与确权表达', color: 'from-blue-500/20 to-sky-500/20', border: 'border-blue-500/30', glow: 'shadow-blue-500/20' },
-  { id: 'scientific', label: '科学 Scientific', desc: '理性整理与逻辑验证', color: 'from-amber-500/20 to-orange-500/20', border: 'border-amber-500/30', glow: 'shadow-amber-500/20' },
-  { id: 'harmonious', label: '和谐 Harmonious', desc: '善意回应与协作共创', color: 'from-fuchsia-500/20 to-pink-500/20', border: 'border-fuchsia-500/30', glow: 'shadow-fuchsia-500/20' }
-];
-
-interface IdeaCardProps {
-  idea: {
-    id: string;
-    title: string;
-    summary: string;
-    sourceType: string;
-    gravityScore: number;
-    tags: string[];
-    aiStructure?: {
-      problem: string;
-      targetUsers: string;
-      possibleSolutions: string[];
-    };
-  };
-  initialX: number;
-  initialY: number;
-}
-
-const IdeaCard: React.FC<IdeaCardProps> = ({ idea, initialX, initialY }) => {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const innerRef = useRef<HTMLDivElement>(null);
-  const [isFlipped, setIsFlipped] = useState(false);
-
-  // Hook up our velocity-based inertia dragging
-  useDraggableCard(cardRef, {
-    initialX,
-    initialY,
-  });
-
-  const handleFlip = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const inner = innerRef.current;
-    if (!inner) return;
-
-    const nextFlipped = !isFlipped;
-    setIsFlipped(nextFlipped);
-
-    gsap.killTweensOf(inner);
-    gsap.to(inner, {
-      rotateY: nextFlipped ? 180 : 0,
-      duration: 0.6,
-      ease: 'back.out(1.1)',
-    });
-  };
-
-  return (
-    <div
-      ref={cardRef}
-      className="draggable-card card-container absolute w-72 h-44 cursor-grab active:cursor-grabbing select-none"
-      style={{ touchAction: 'none' }}
-    >
-      <div ref={innerRef} className="card-inner w-full h-full">
-        {/* Card Front */}
-        <div className="card-front w-full h-full panel-glass p-5 rounded-2xl flex flex-col justify-between shadow-lg">
-          <div className="space-y-2">
-            <div className="flex justify-between items-start">
-              <span className="text-[9px] font-mono uppercase bg-brand/10 text-brand px-2 py-0.5 rounded border border-brand/20">
-                {idea.sourceType === 'life_observation' ? '🌱 生活观察' : 
-                 idea.sourceType === 'work_efficiency' ? '🛠️ 效率痛点' : 
-                 idea.sourceType === 'random_spark' ? '⚡ 闪光灵感' : '🔮 未来物种'}
-              </span>
-              <span className="text-[10px] text-parchment-dim font-mono">
-                引力值 {idea.gravityScore}
-              </span>
-            </div>
-            <h3 className="text-sm font-bold text-parchment line-clamp-1">{idea.title}</h3>
-            <p className="text-[11px] text-parchment-dim line-clamp-2 leading-relaxed">{idea.summary}</p>
-          </div>
-
-          <div className="flex justify-between items-center pt-2 border-t border-white/5">
-            <div className="flex gap-1">
-              {(idea.tags || []).slice(0, 2).map(tag => (
-                <span key={tag} className="text-[9px] text-parchment-dim bg-white/5 px-1.5 py-0.5 rounded">
-                  #{tag}
-                </span>
-              ))}
-            </div>
-            <button
-              onClick={handleFlip}
-              className="text-[10px] text-brand font-bold hover:text-emerald-300 flex items-center gap-0.5"
-            >
-              AI 结构化 <Sparkles size={8} />
-            </button>
-          </div>
-        </div>
-
-        {/* Card Back */}
-        <div className="card-back w-full h-full panel-glass p-5 rounded-2xl flex flex-col justify-between shadow-lg border border-brand/20">
-          <div className="space-y-2 text-[10px] leading-relaxed text-parchment-dim scrollable-y max-h-[110px] pr-1">
-            <div>
-              <span className="font-bold text-brand block mb-0.5">🎯 想解决的问题:</span>
-              <p>{idea.aiStructure?.problem || '暂无结构化痛点分析'}</p>
-            </div>
-            <div>
-              <span className="font-bold text-brand block mt-1.5 mb-0.5">👥 目标群体:</span>
-              <p>{idea.aiStructure?.targetUsers || '所有关注此想法者'}</p>
-            </div>
-            {idea.aiStructure?.possibleSolutions && idea.aiStructure.possibleSolutions.length > 0 && (
-              <div>
-                <span className="font-bold text-brand block mt-1.5 mb-0.5">🚀 实现方向建议:</span>
-                <ul className="list-disc pl-3">
-                  {idea.aiStructure.possibleSolutions.map((s, idx) => <li key={idx}>{s}</li>)}
-                </ul>
-              </div>
-            )}
-          </div>
-
-          <div className="flex justify-between items-center pt-2 border-t border-white/5">
-            <span className="text-[9px] text-brand/80 font-mono">AI-Refined Structure</span>
-            <button
-              onClick={handleFlip}
-              className="text-[10px] text-brand font-bold hover:text-emerald-300"
-            >
-              返回正面
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+import { ContentType, ExperienceTab, Article, Tool, Topic } from '@/types';
+import { useAppStore } from '@/store/useAppStore';
+import { useLoadFavorites, useToggleFavorite } from '@/hooks/useFavorites';
+import { AISearch } from '../components/AISearch';
+import { ArticleCard, ToolCard, TopicCard } from '../components/CardComponents';
+import { FloatingDock } from '../components/FloatingDock';
+import { AlertTriangle, ArrowRight, Book, FileText, Layout, LoaderCircle, Zap } from 'lucide-react';
+import { compassApi } from '@/services/api';
+import { getErrorMessage } from '@dianzi/shared';
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  const heroRef = useRef<HTMLDivElement>(null);
-  const titleRef = useRef<HTMLHeadingElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const {
+    themeMode,
+    currentDomain,
+    selectedToolIds,
+    toggleToolSelection,
+    clearSelection,
+    isToolFavorited,
+    isArticleFavorited,
+  } = useAppStore();
 
-  const [ideas, setIdeas] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  // Mock initial ideas for dev fallback
-  const mockIdeas = [
-    { id: '1', title: 'AI 跑腿拼单小助手', summary: '帮助宿舍楼大学生聚合配送订单的轻量拼单工具，减少配送等待。', sourceType: 'life_observation', gravityScore: 84, tags: ['校园', '协同配送', '效率工具'], aiStructure: { problem: '宿舍外卖小哥无法入楼，取件零散且高频耗时。', targetUsers: '在校寄宿大学生与跑腿人员', possibleSolutions: ['微信小程序聚合', '寝室拼单路由算法'] } },
-    { id: '2', title: '独立开发者合规审查器', summary: '基于大模型的独立项目开源合规与国内上线法律底线自动筛查面板。', sourceType: 'work_efficiency', gravityScore: 102, tags: ['出海', '合规检测', '法律助手'], aiStructure: { problem: '独立项目上线法律条款冗杂，容易违规遭遇下架风险。', targetUsers: '独立创作者与初创团队', possibleSolutions: ['多维度法条数据库对比', '大模型合规安全系数评分'] } },
-    { id: '3', title: '自适应天气情绪背景网', summary: '利用网络地理API与气象监测，自适应改变呼吸背景与音乐的治愈点子。', sourceType: 'random_spark', gravityScore: 56, tags: ['治愈', '创意艺术', '自适应色彩'], aiStructure: { problem: '传统网站色彩一成不变，缺乏环境沉浸感。', targetUsers: '个人主页创作者与艺术爱好者', possibleSolutions: ['CSS HSL变量渐变绑定', '天气数据API订阅'] } },
-    { id: '4', title: '共享咖啡随手顺路带', summary: '点咖啡时顺便帮同楼层同事带一杯，获取能量币换取下次顺带的积分。', sourceType: 'life_observation', gravityScore: 72, tags: ['办公室', '共享模式', '咖啡顺路'], aiStructure: { problem: '工作期间点单成本高，下楼取咖啡频繁打断工作。', targetUsers: '写字楼办公白领', possibleSolutions: ['熟人顺路打卡模式', '积分回馈代币机制'] } }
+  const [contentType, setContentType] = useState<ContentType>(ContentType.TOOL);
+  const [experienceTab, setExperienceTab] = useState<ExperienceTab>('featured');
+  const [presetQuery, setPresetQuery] = useState('');
+  const presetQuestions = [
+    '如何用 AI 生成短视频封面',
+    'AI 写代码哪个工具最好',
+    '用 AI 自动做 PPT 的方法',
   ];
+  const [tools, setTools] = useState<Tool[]>([]);
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [contentLoading, setContentLoading] = useState(true);
+  const [contentError, setContentError] = useState('');
+
+  const { toggleFavorite } = useToggleFavorite();
+  useLoadFavorites();
 
   useEffect(() => {
-    // 1. Fetch ideas from server
-    ideasApi
-      .listIdeas()
-      .then(data => {
-        setIdeas(data.items || mockIdeas);
+    let cancelled = false;
+
+    Promise.all([compassApi.listTools(), compassApi.listTopics(), compassApi.listArticles()])
+      .then(([toolResult, topicResult, articleResult]) => {
+        if (cancelled) return;
+        setTools(toolResult.items);
+        setTopics(topicResult.items);
+        setArticles(articleResult.items);
       })
-      .catch(() => {
-        setIdeas(mockIdeas); // Fallback to mock data
+      .catch((error) => {
+        if (!cancelled) {
+          setContentError(getErrorMessage(error, '全球内容加载失败，请稍后重试。'));
+        }
       })
       .finally(() => {
-        setLoading(false);
+        if (!cancelled) setContentLoading(false);
       });
 
-    // 2. Setup Slogan scroll morphing using GSAP ScrollTrigger
-    const ctx = gsap.context(() => {
-      if (titleRef.current) {
-        gsap.fromTo(titleRef.current, 
-          { scale: 1, y: 0, opacity: 1 },
-          {
-            scale: 0.65,
-            y: -50,
-            opacity: 0.9,
-            scrollTrigger: {
-              trigger: heroRef.current,
-              start: 'top top',
-              end: 'bottom top',
-              scrub: true,
-              pin: true,
-              pinSpacing: false
-            }
-          }
-        );
-      }
-    });
-
-    return () => ctx.revert();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
+  // 数据过滤：工具展示全部，经验和文章按领域过滤
+  const filteredTools = tools;
+  const filteredTopics = topics.filter((t) => t.domain === currentDomain);
+  const domainArticles = articles.filter((article) => article.domain === currentDomain);
+  const featuredArticles = domainArticles.filter((a) => a.isFeatured && !a.topicId);
+  const plazaArticles = domainArticles.filter((a) => !a.isFeatured);
+
+  const isEyeCare = themeMode === 'eye-care';
+
   return (
-    <div ref={containerRef} className="relative min-h-[140vh] w-full text-parchment select-none pb-20">
-      
-      {/* 1. Scroll Morphing Hero Slogan Zone */}
-      <div 
-        ref={heroRef} 
-        className="w-full h-[60vh] flex flex-col justify-center items-center text-center px-4 relative z-20 pointer-events-none"
-      >
-        <div ref={titleRef} className="space-y-4 max-w-3xl">
-          <div className="text-xs font-mono text-brand uppercase tracking-widest flex items-center justify-center gap-1.5">
-            <Compass size={14} className="animate-spin-slow" /> IDEAS ARE CHUNKS OF CHAOS
-          </div>
-          <h1 className="text-4xl md:text-6xl font-black tracking-tighter leading-none">
-            让生活里的想法<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand to-emerald-400">
-              遇见需要它的人
+    <div className="animate-in fade-in duration-500 pb-32">
+      {/* Hero */}
+      <section className="pt-8 pb-8 px-4 text-center relative overflow-hidden">
+        <div className="max-w-4xl mx-auto relative z-10">
+          <h1 className="text-3xl md:text-5xl font-extrabold mb-4 tracking-tight">
+            遇到{' '}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">
+              难题
             </span>
+            ？
+            <br className="md:hidden" />
+            用{' '}
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">
+              AI
+            </span>{' '}
+            解决
           </h1>
-          <p className="text-xs md:text-sm text-parchment-dim font-mono max-w-md mx-auto">
-            点子平台 · 守法 独立 科学 和谐
+          <p
+            className={`text-sm md:text-xl max-w-2xl mx-auto mb-8 ${
+              isEyeCare ? 'text-stone-500' : 'text-slate-500'
+            }`}
+          >
+            你只管提出问题，我们提供视频教程和实战工具，助你快速破局。
           </p>
-        </div>
-      </div>
 
-      {/* 2. Brutalist Grid Constellation Tabletop Canvas */}
-      <div className="relative w-full h-[90vh] grid-bg border-t border-b border-white/5 overflow-hidden flex items-center justify-center">
-        
-        {/* Decorative background grid neon markers */}
-        <div className="absolute inset-0 pointer-events-none flex justify-between items-between p-8 opacity-40">
-          <span className="text-[10px] font-mono text-white/20">COORD_X: [DECAY]</span>
-          <span className="text-[10px] font-mono text-white/20">DAMPING: 160</span>
-        </div>
+          <AISearch
+            tools={filteredTools}
+            articles={domainArticles}
+            onToolClick={(id) => navigate(`/tool/${id}`)}
+            onArticleClick={(id) => navigate(`/article/${id}`)}
+            themeMode={themeMode}
+            initialQuery={presetQuery}
+          />
 
-        {/* 4 Gravity Values Star Core Cores */}
-        <div className="absolute inset-0 pointer-events-none grid grid-cols-2 grid-rows-2 p-10 md:p-16 gap-20">
-          {VALUE_CORES.map(core => (
-            <div 
-              key={core.id}
-              className={`panel-glass p-5 rounded-2xl border ${core.border} shadow-lg ${core.glow} flex flex-col justify-between max-w-[240px] transition-all`}
+          <div className="mt-4 flex flex-wrap justify-center gap-2">
+            {presetQuestions.map((q) => (
+              <button
+                key={q}
+                type="button"
+                onClick={() => setPresetQuery(q)}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  isEyeCare
+                    ? 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                    : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                }`}
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Main Content */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Module Switcher */}
+        <div className="flex flex-col items-center mb-6">
+          <div
+            className={`p-1 rounded-2xl flex ${
+              isEyeCare ? 'bg-eye-care-border' : 'bg-slate-200/50'
+            }`}
+          >
+            <button
+              onClick={() => setContentType(ContentType.TOOL)}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
+                contentType === ContentType.TOOL
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
             >
-              <div className="space-y-1">
-                <h4 className="text-xs font-bold text-parchment">{core.label}</h4>
-                <p className="text-[10px] text-parchment-dim leading-relaxed">{core.desc}</p>
+              <Zap size={16} /> 工具推荐
+            </button>
+            <button
+              onClick={() => setContentType(ContentType.EXPERIENCE)}
+              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
+                contentType === ContentType.EXPERIENCE
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Book size={16} /> 经验心得
+            </button>
+          </div>
+        </div>
+
+        {/* Tools View */}
+        {contentLoading && (
+          <div className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-12 text-sm text-slate-500">
+            <LoaderCircle size={18} className="animate-spin" />
+            正在加载全球内容...
+          </div>
+        )}
+
+        {!contentLoading && contentError && (
+          <div className="flex items-start gap-2 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-5 text-sm leading-6 text-rose-700">
+            <AlertTriangle size={18} className="mt-0.5 shrink-0" />
+            {contentError}
+          </div>
+        )}
+
+        {contentType === ContentType.TOOL && (
+          <div className={contentLoading || contentError ? 'hidden' : 'animate-in fade-in slide-in-from-bottom-4 duration-500'}>
+            <div className="flex justify-between items-center mb-6 px-1">
+              <h3 className="font-bold text-xl md:text-2xl flex items-center gap-2">
+                <Zap className="text-blue-500" size={24} /> 热门工具
+              </h3>
+              <button
+                onClick={() => navigate('/tools')}
+                className={`text-sm font-semibold flex items-center gap-1 px-4 py-2 rounded-xl transition-colors ${
+                  isEyeCare
+                    ? 'bg-stone-100 text-stone-600 hover:bg-stone-200'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                查看全部 <ArrowRight size={14} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+              {filteredTools.map((tool) => (
+                <ToolCard
+                  key={tool.id}
+                  tool={tool}
+                  onClick={() => navigate(`/tool/${tool.id}`)}
+                  themeMode={themeMode}
+                  isSelected={selectedToolIds.has(tool.id)}
+                  isFavorited={isToolFavorited(tool.id)}
+                  onToggleSelection={(e) => {
+                    e?.stopPropagation();
+                    toggleToolSelection(tool.id);
+                  }}
+                  onToggleFavorite={(e) => {
+                    e?.stopPropagation();
+                    toggleFavorite('tool', tool.id, isToolFavorited(tool.id));
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Experience View */}
+        {contentType === ContentType.EXPERIENCE && (
+          <div className={contentLoading || contentError ? 'hidden' : 'animate-in fade-in slide-in-from-bottom-4 duration-500'}>
+            {/* Sub Tabs */}
+            <div className="flex gap-6 mb-8 border-b border-slate-200 pb-1">
+              <button
+                onClick={() => setExperienceTab('featured')}
+                className={`pb-3 px-2 text-sm font-bold border-b-2 transition-colors ${
+                  experienceTab === 'featured'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                精品专区
+              </button>
+              <button
+                onClick={() => setExperienceTab('plaza')}
+                className={`pb-3 px-2 text-sm font-bold border-b-2 transition-colors ${
+                  experienceTab === 'plaza'
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                大众广场
+              </button>
+            </div>
+
+            {experienceTab === 'featured' ? (
+              <div className="space-y-8">
+                {/* Topics Section */}
+                {filteredTopics.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                      <Layout size={18} /> 系列主题
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {filteredTopics.map((topic) => (
+                        <TopicCard
+                          key={topic.id}
+                          topic={topic}
+                          themeMode={themeMode}
+                          onClick={() => navigate(`/topics/${topic.id}`)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Independent Featured Articles */}
+                {featuredArticles.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-bold mb-4 mt-8 flex items-center gap-2">
+                      <FileText size={18} /> 精选文章
+                    </h3>
+                    <div className="grid grid-cols-1 gap-4">
+                      {featuredArticles.map((article) => (
+                        <ArticleCard
+                          key={article.id}
+                          article={article}
+                          themeMode={themeMode}
+                          onClick={() => navigate(`/article/${article.id}`)}
+                          isFavorited={isArticleFavorited(article.id)}
+                          onToggleFavorite={(e) => {
+                            e?.stopPropagation();
+                            toggleFavorite('article', article.id, isArticleFavorited(article.id));
+                          }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-              <span className="text-[9px] font-mono text-brand/40 uppercase tracking-widest mt-4">
-                Active Gravity Field
-              </span>
-            </div>
-          ))}
-        </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-4">
+                {plazaArticles.map((article) => (
+                  <ArticleCard
+                    key={article.id}
+                    article={article}
+                    themeMode={themeMode}
+                    onClick={() => navigate(`/article/${article.id}`)}
+                    isFavorited={isArticleFavorited(article.id)}
+                    onToggleFavorite={(e) => {
+                      e?.stopPropagation();
+                      toggleFavorite('article', article.id, isArticleFavorited(article.id));
+                    }}
+                  />
+                ))}
+                {plazaArticles.length === 0 && (
+                  <div className="text-center py-20 text-slate-400">
+                    暂无内容，快来投稿吧！
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </section>
 
-        {/* Scattered Idea Cards */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          {!loading && ideas.map((idea, index) => {
-            // Distribute cards randomly around center
-            const angles = [0, 90, 180, 270];
-            const angle = (angles[index % 4] * Math.PI) / 180 + (Math.random() - 0.5) * 0.4;
-            const distance = 160 + Math.random() * 80;
-            const x = Math.cos(angle) * distance;
-            const y = Math.sin(angle) * distance;
-
-            return (
-              <IdeaCard 
-                key={idea.id} 
-                idea={idea} 
-                initialX={x} 
-                initialY={y} 
-              />
-            );
-          })}
-
-          {loading && (
-            <div className="text-xs font-mono text-brand/60 animate-pulse">
-              [CONSTELLATING IDEA NETWORK...]
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* 3. Floating Action & Quick Access bar */}
-      <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 bg-slate-900/80 backdrop-blur-xl border border-white/10 px-5 py-3 rounded-full shadow-2xl">
-        <button
-          onClick={() => navigate('/ideas')}
-          className="text-xs font-bold px-4 py-2 text-parchment-dim hover:text-white transition-colors"
-        >
-          点子广场
-        </button>
-        <div className="w-[1px] h-4 bg-white/10" />
-        
-        <button
-          onClick={() => navigate('/new')}
-          className="bg-brand hover:bg-emerald-400 text-slate-950 font-black text-xs px-5 py-2.5 rounded-full flex items-center gap-1.5 transition-all shadow-lg hover:shadow-brand/20"
-        >
-          <Plus size={14} strokeWidth={3} /> 捕捉新点子
-        </button>
-
-        <div className="w-[1px] h-4 bg-white/10" />
-        <button
-          onClick={() => window.open('https://github.com/AdgaiWalker/dianzi', '_blank')}
-          className="text-xs font-bold px-4 py-2 text-parchment-dim hover:text-white transition-colors"
-        >
-          GitHub
-        </button>
-      </div>
-
+      <FloatingDock
+        selectedToolIds={selectedToolIds}
+        tools={tools}
+        onClearSelection={clearSelection}
+        onGenerate={() => navigate('/solution/new')}
+      />
     </div>
   );
 };

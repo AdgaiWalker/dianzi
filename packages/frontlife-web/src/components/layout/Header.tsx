@@ -8,7 +8,6 @@ import { useUserStore } from '@/store/useUserStore';
 
 const tabs = [
   { id: 'home', label: '首页', path: '/' },
-  { id: 'projects', label: '项目共创', path: '/projects' },
   { id: 'explore', label: '探索', path: '/explore' },
   { id: 'me', label: '我的', path: '/me' },
 ];
@@ -30,13 +29,11 @@ export default function Header() {
   const currentRoute =
     location.pathname === '/'
       ? 'home'
-      : location.pathname === '/projects'
-        ? 'projects'
-        : location.pathname.startsWith('/explore') || location.pathname.startsWith('/space')
-          ? 'explore'
-          : location.pathname === '/me'
-            ? 'me'
-            : 'home';
+      : location.pathname.startsWith('/explore') || location.pathname.startsWith('/space')
+        ? 'explore'
+        : location.pathname === '/me'
+          ? 'me'
+          : 'home';
 
   const refreshNotifications = useCallback(() => {
     if (!token) {
@@ -67,7 +64,7 @@ export default function Header() {
         onClick={() => navigate('/')}
         className="flex items-center gap-2"
       >
-        <span className="font-display text-xl font-bold text-ink">点子 DIANZI</span>
+        <span className="font-display text-xl font-bold text-ink">盘根</span>
       </button>
 
       {/* Desktop Tabs */}

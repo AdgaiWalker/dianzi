@@ -16,7 +16,6 @@ import { LegalPage } from './pages/LegalPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { ContentStudioPage } from './pages/ContentStudioPage';
 import { ContentStudioEditPage } from './pages/ContentStudioEditPage';
-import { IdeaNewPage } from './pages/IdeaNewPage';
 
 // 路由配置
 export const routes: RouteObject[] = [
@@ -59,10 +58,6 @@ export const routes: RouteObject[] = [
   {
     path: '/solution/new',
     element: <SolutionNewPage />,
-  },
-  {
-    path: '/new',
-    element: <IdeaNewPage />,
   },
   {
     path: '/solution/:solutionId',

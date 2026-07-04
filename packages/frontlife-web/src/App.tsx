@@ -17,7 +17,6 @@ import ArticlePage from './pages/ArticlePage';
 import ProfilePage from './pages/ProfilePage';
 import LoginPage from './pages/LoginPage';
 import LegalDocumentPage from './pages/LegalDocumentPage';
-import ProjectsPage from './pages/ProjectsPage';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -58,7 +57,6 @@ export default function App() {
       <PageLayout>
         <Routes>
           <Route path="/" element={page(<HomePage />)} />
-          <Route path="/projects" element={page(<ProjectsPage />)} />
           <Route path="/search" element={page(<SearchResultPage />)} />
           <Route path="/explore" element={page(<ExplorePage />)} />
           <Route path="/space/:id" element={page(<SpacePage />)} />
