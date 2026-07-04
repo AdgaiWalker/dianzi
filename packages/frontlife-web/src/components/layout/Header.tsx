@@ -64,7 +64,18 @@ export default function Header() {
         onClick={() => navigate('/')}
         className="flex items-center gap-2"
       >
-        <span className="font-display text-xl font-bold text-ink">盘根</span>
+        <svg className="w-6 h-6 shrink-0" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="header-orbit-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#C7C4E6" stopOpacity={0.1} />
+              <stop offset="100%" stopColor="#C7C4E6" stopOpacity={1} />
+            </linearGradient>
+          </defs>
+          <path d="M 38 42 C 45 15, 72 25, 72 72" stroke="url(#header-orbit-grad)" strokeWidth="4.5" strokeLinecap="round" />
+          <circle cx="32" cy="50" r="12" fill="#111111" />
+          <circle cx="72" cy="72" r="6" fill="#C7C4E6" />
+        </svg>
+        <span className="font-display text-xl font-bold text-ink tracking-tight">点子 DIANZI</span>
       </button>
 
       {/* Desktop Tabs */}
