@@ -12,6 +12,8 @@ import {
   siteConfigs,
   trustEvents,
   users,
+  ideas,
+  ideaStructures,
 } from "../db/schema";
 import { db, pool } from "../db/client";
 import { refreshSearchDocumentsInDb } from "../data/postgres";
@@ -458,6 +460,92 @@ async function seed() {
       },
     ])
     .onConflictDoNothing();
+
+  // Seed ideas and idea_structures for Dianzi co-creation tabletop and boards
+  await db
+    .insert(ideas)
+    .values([
+      {
+        id: 101,
+        userId: 2,
+        rawInput: "想要一个聚合宿舍楼大学生的拼单小助手，顺便跑腿送外卖",
+        title: "AI 跑腿拼单小助手",
+        summary: "宿舍楼大学生的轻量级配送拼单路由工具",
+        sourceType: "life_observation",
+        visibility: "public",
+        status: "thinking",
+        gravityScore: 84,
+      },
+      {
+        id: 102,
+        userId: 2,
+        rawInput: "独立开发者国内上线合规与开源许可筛查面板，防下架",
+        title: "开发者合规审查器",
+        summary: "基于法律条文与大模型的合规筛查助手",
+        sourceType: "work_efficiency",
+        visibility: "public",
+        status: "validating",
+        gravityScore: 102,
+      },
+      {
+        id: 103,
+        userId: 2,
+        rawInput: "根据环境气象自适应改变背景配色和疗愈音乐的创意主页",
+        title: "自适应天气情绪背景网",
+        summary: "自适应地理与气候变化的沉浸式情绪空间",
+        sourceType: "random_spark",
+        visibility: "public",
+        status: "building",
+        gravityScore: 56,
+      },
+      {
+        id: 104,
+        userId: 2,
+        rawInput: "点外带咖啡时顺便帮同层同事带一杯，拿能量币换取下次顺带的积分",
+        title: "共享咖啡随手顺路带",
+        summary: "办公写字楼熟人间的咖啡互助顺带机制",
+        sourceType: "life_observation",
+        visibility: "public",
+        status: "verified",
+        gravityScore: 72,
+      },
+    ])
+    .onConflictDoNothing();
+
+  await db
+    .insert(ideaStructures)
+    .values([
+      {
+        id: 101,
+        ideaId: 101,
+        structuredTitle: "AI 跑腿拼单小助手",
+        oneSentence: "宿舍楼大学生的轻量级配送拼单路由工具",
+        sourceScene: "宿舍外卖小哥不能进楼，取外卖费时间且零散",
+        problem: "寝室外卖高频拿取耗时，拼单配送困难",
+        targetUsers: "在校宿舍寄宿生与兼职跑腿学生",
+        possibleSolutions: ["微信小程序聚合", "寝室拼单最优路由算法"],
+        validationSteps: ["在单栋宿舍群里发起手动拼单测试", "统计用户等待时间减少幅度"],
+        risks: ["外卖配送时效难以把控", "跑腿佣金结算的信任成本"],
+        tags: ["校园", "配送拼单", "效率工具"],
+      },
+      {
+        id: 102,
+        ideaId: 102,
+        structuredTitle: "开发者合规审查器",
+        oneSentence: "基于法律条文与大模型的合规筛查助手",
+        sourceScene: "独立项目在国内上架时，因隐私或经营合规条款不明遭遇下架",
+        problem: "上线条款冗余复杂，合规核查门槛高",
+        targetUsers: "独立开发者与微型创业团队",
+        possibleSolutions: ["多维度政策法规数据库对比", "隐私政策大模型合规检测评分"],
+        validationSteps: ["分析 10 款常见 App 隐私合规并给出修正建议", "邀请法律与开发同行反馈"],
+        risks: ["法规库更新滞后", "AI 判定不具备正式法律效力"],
+        tags: ["独立开发", "合规辅助", "出海工具"],
+      },
+    ])
+    .onConflictDoNothing();
+
+  await db.execute(sql`select setval('ideas_id_seq', coalesce((select max(id) from ideas), 1), true)`);
+  await db.execute(sql`select setval('idea_structures_id_seq', coalesce((select max(id) from idea_structures), 1), true)`);
 
   await db.execute(sql`select setval('cities_id_seq', coalesce((select max(id) from cities), 1), true)`);
   await db.execute(sql`select setval('users_id_seq', coalesce((select max(id) from users), 1), true)`);
