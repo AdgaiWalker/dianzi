@@ -26,7 +26,7 @@ echo "安装项目依赖..."
 cd /opt/northstar
 pnpm install --frozen-lockfile || pnpm install
 
-# 3. 启动 Docker Compose（镜像构建会完成服务端类型检查和两站前端构建）
+# 3. 启动 Docker Compose（镜像构建会完成服务端类型检查、校园端和后台构建）
 echo "启动服务..."
 cd /opt/northstar
 docker compose up -d --build
@@ -39,6 +39,5 @@ echo "推送数据库 schema..."
 docker compose exec app npx drizzle-kit push || echo "Schema push 需要手动执行"
 
 echo "=== 部署完成 ==="
-echo "全球站: http://$(hostname -I | awk '{print $1}')"
 echo "校园站: http://$(hostname -I | awk '{print $1}'):3001"
 echo "API: http://$(hostname -I | awk '{print $1}'):4000/api/health"

@@ -40,7 +40,6 @@ services:
     depends_on:
       - app
     ports:
-      - "80:80"
       - "3001:3001"
       - "3002:3002"
 

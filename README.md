@@ -15,7 +15,6 @@
 
 | 层级 | 技术 | 说明 |
 |------|------|------|
-| 前端 (全球站) | React 19 + Tailwind CSS v4 | 采用 `@tailwindcss/vite` 插件，无 `tailwind.config.js` |
 | 前端 (校园站) | React 19 + Tailwind CSS v3 | 逐步升级中，使用 Zustand 5 进行状态管理 |
 | 后端 | Hono + Drizzle ORM + PostgreSQL | 多模块 API，已接入点子核心数据模型 |
 | AI 引擎 | 智谱 GLM-4-Flash | 后端代理，前端不持有 API key |
@@ -29,7 +28,6 @@
 ```text
 dianzi/
 ├── packages/
-│   ├── web-global/      # @dianzi/web-global       前端全球端 (点子官网与交互大厅)
 │   ├── web-campus/      # @dianzi/web-campus       前端校园端 (点子共创与实践板)
 │   ├── admin-console/   # @dianzi/admin-console    后台管理端
 │   ├── server/          # @dianzi/server           Hono 服务端 API
@@ -58,12 +56,6 @@ $env:CI="true"; pnpm install
 
     ```bash
     pnpm --filter @dianzi/server dev
-    ```
-
-*   **启动点子平台官网 (Port 3000)**：
-
-    ```bash
-    pnpm --filter @dianzi/web-global dev
     ```
 
 *   **启动校园共创板 (Port 3001)**：
@@ -112,12 +104,6 @@ pnpm --filter @dianzi/server db:seed
 
     ```bash
     pnpm --filter @dianzi/server exec tsc --noEmit
-    ```
-
-*   **全球端打包构建**：
-
-    ```bash
-    pnpm --filter @dianzi/web-global build
     ```
 
 *   **运行单元测试**：

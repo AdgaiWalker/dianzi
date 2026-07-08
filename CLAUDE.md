@@ -10,7 +10,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 packages/
 ├── server/          @dianzi/server          Hono + Drizzle ORM + PostgreSQL  → :4000
 ├── shared/          @dianzi/shared          纯 TS 类型、契约与 Drizzle schema
-├── frontai-web/     @dianzi/web-global      点子官网大厅 (React + Tailwind CSS v4 + GSAP) → :3000
 ├── frontlife-web/   @dianzi/web-campus      校园实践现场 (React + Tailwind CSS v3 + Vite) → :3001
 └── admin-console/   @dianzi/admin-console   管理后台 (React + Tailwind CSS v3 + Vite) → :3002
 ```
@@ -23,16 +22,14 @@ $env:CI="true"; pnpm install
 
 # 启动开发服务
 pnpm --filter @dianzi/server dev          # 服务端 :4000
-pnpm --filter @dianzi/web-global dev      # 全球官网 :3000
 pnpm --filter @dianzi/web-campus dev      # 校园端 :3001
 pnpm --filter @dianzi/admin-console dev   # 后台 :3002
 
 # 类型检查 (NoEmit)
 pnpm --filter @dianzi/server exec tsc --noEmit
-pnpm --filter @dianzi/web-global exec tsc --noEmit
-
 # 构建打包
-pnpm --filter @dianzi/web-global build
+pnpm --filter @dianzi/web-campus build
+pnpm --filter @dianzi/admin-console build
 
 # 运行测试
 pnpm --filter @dianzi/server test
@@ -63,7 +60,3 @@ pnpm --filter @dianzi/server db:seed      # 填充种子数据
 *   纯 TypeScript 代码，无单独构建步骤。
 *   **严禁引入任何 React 或 DOM 相关的 UI 依赖**。
 *   包含了数据交互 envelope、API 契约定义与敏感词管控词包 (`sensitive.ts`)。
-
-### 3. 视觉与物理引擎集成 (`@dianzi/web-global`)
-*   **Tailwind CSS v4**：主样式在 `src/index.css` 的 `@theme` 自定义声明中，不再存在 `tailwind.config.js`。
-*   **手势与物理惯性**：浮动卡片使用 [useDraggableCard.ts](file:///C:/Users/26296/Desktop/dianzi/packages/frontai-web/src/hooks/useDraggableCard.ts) 钩子来获得手势速度追踪、Skew 倾斜扭曲与边界衰减回弹效果。

@@ -1,0 +1,22 @@
+# Local/editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Runtime noise
+*.log
+*.tmp
+*.bak
+*.swp
+
+# Build/cache output
+dist/
+build/
+.cache/
+.astro/
+node_modules/
+
+# Large generated reports should be archived intentionally, not committed by accident.
+*.zip
+*.tar
+*.gz

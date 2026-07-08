@@ -1,0 +1,4 @@
+interface:
+  display_name: "Walker NorthStar"
+  short_description: "Route AdgaiWalker, publish interface, personal agent, skill, and NorthStar decisions"
+  default_prompt: "Use $walker-northstar to judge whether the task belongs to the personal system, the publish interface, or the NorthStar community network."
